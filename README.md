@@ -1,8 +1,7 @@
 This code is mainly here for review. If you want to run the model please follow the instructions below.
 Many simulations, even with multiprocessing, run for a very long time. As a rule of thumb on my machine simulation is about 3-4x slower than real time (i.e. 3-4s for a 1000ms simulation). This was created to run in a 64bit linux environment. I cannot really help with windows or mac but just contact me if you have questions, maybe I can help.
 
-
-#Installation Instructions
+# Installation Instructions
 
 Here are installation instructions that should allow testing of the smallexc
 model as used for the J Neurophysiol manuscript (Koert & Kuenzel, "Small dendritic 
