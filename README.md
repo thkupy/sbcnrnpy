@@ -8,7 +8,7 @@ model as used for the J Neurophysiol manuscript (Koert & Kuenzel, "Small dendrit
 synapses enhance temporal coding in a model of cochlear nucleus bushy cells").
 This is for linux systems, specifically ubuntu 18.04.
 
-1) unzip the smallexc repository wherever you keep your model code, in this example it
+1) Download as zip and unzip the smallexc repository wherever you keep your model code, in this example it
 could be in:
 
 ```~/Documents/Python/KoertKuenzelSBC```
