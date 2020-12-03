@@ -1,4 +1,4 @@
-/* Created by Language version: 7.5.0 */
+/* Created by Language version: 7.7.0 */
 /* NOT VECTORIZED */
 #define NRN_VECTORIZED 0
 #include <stdio.h>
@@ -81,6 +81,15 @@ extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
 extern void nrn_promote(Prop*, int, int);
 extern Memb_func* memb_func;
+ 
+#define NMODL_TEXT 1
+#if NMODL_TEXT
+static const char* nmodl_file_text;
+static const char* nmodl_filename;
+extern void hoc_reg_nmodl_text(int, const char*);
+extern void hoc_reg_nmodl_filename(int, const char*);
+#endif
+
  extern void _nrn_setdata_reg(int, void(*)(Prop*));
  static void _setdata(Prop* _prop) {
  _p = _prop->param; _ppvar = _prop->dparam;
@@ -149,7 +158,7 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
 static int _ode_count(int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
- "7.5.0",
+ "7.7.0",
 "ih",
  "ghbar_ih",
  0,
@@ -185,6 +194,10 @@ extern void _cvode_abstol( Symbol**, double*, int);
  	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 0);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
      _nrn_setdata_reg(_mechtype, _setdata);
+ #if NMODL_TEXT
+  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);
+  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);
+#endif
   hoc_register_prop_size(_mechtype, 6, 0);
  	hoc_register_cvode(_mechtype, _ode_count, 0, 0, 0);
  	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);
@@ -457,3 +470,113 @@ static void _initlists() {
    _t__zrexp = makevector(351*sizeof(double));
 _first = 0;
 }
+
+#if NMODL_TEXT
+static const char* nmodl_filename = "/home/kuenzel/Dokumente/Python/smallexc/mechanisms/ih.mod";
+static const char* nmodl_file_text = 
+  "TITLE jsr.mod  VCN conductances\n"
+  "\n"
+  "COMMENT\n"
+  "Ih for VCN neurons - average from several studies in auditory neurons\n"
+  "\n"
+  "\n"
+  "Implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.\n"
+  "revised 2/28/04 pbm\n"
+  "\n"
+  "pmanis@med.unc.edu\n"
+  "\n"
+  "ENDCOMMENT\n"
+  "\n"
+  "UNITS {\n"
+  "        (mA) = (milliamp)\n"
+  "        (mV) = (millivolt)\n"
+  "        (nA) = (nanoamp)\n"
+  "}\n"
+  "\n"
+  "NEURON {\n"
+  "        SUFFIX ih\n"
+  "        NONSPECIFIC_CURRENT i\n"
+  "        RANGE ghbar, gh, ih\n"
+  "        GLOBAL rinf, rtau\n"
+  "}\n"
+  "\n"
+  "INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}\n"
+  "\n"
+  "PARAMETER {\n"
+  "        v (mV)\n"
+  "        celsius = 22 (degC)\n"
+  "        dt (ms)\n"
+  "        ghbar = 0.00318 (mho/cm2) <0,1e9>\n"
+  "        eh = -43 (mV)\n"
+  "}\n"
+  "\n"
+  "STATE {\n"
+  "        r\n"
+  "}\n"
+  "\n"
+  "ASSIGNED {\n"
+  "	gh (mho/cm2)\n"
+  "	i (mA/cm2)\n"
+  "	rinf\n"
+  "    rtau (ms)\n"
+  "}\n"
+  "\n"
+  "LOCAL rexp\n"
+  "\n"
+  "BREAKPOINT {\n"
+  "	SOLVE states\n"
+  "    \n"
+  "	gh = ghbar*r\n"
+  "    i = gh*(v - eh)\n"
+  "    }\n"
+  "\n"
+  "UNITSOFF\n"
+  "\n"
+  "INITIAL {\n"
+  "    trates(v)\n"
+  "    r = rinf\n"
+  "}\n"
+  "\n"
+  "PROCEDURE states() {  :Computes state variables m, h, and n\n"
+  "	trates(v)      :             at the current v and dt.\n"
+  "	r = r + rexp*(rinf-r)\n"
+  "VERBATIM\n"
+  "	return 0;\n"
+  "ENDVERBATIM\n"
+  "}\n"
+  "\n"
+  "LOCAL q10\n"
+  "PROCEDURE rates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "\n"
+  "	q10 = 3^((celsius - 22)/10)\n"
+  "    rinf = 1 / (1+exp((v + 76) / 7))\n"
+  "    rtau = (100000 / (237*exp((v+60) / 12) + 17*exp(-(v+60) / 14))) + 25\n"
+  "\n"
+  "}\n"
+  "\n"
+  "PROCEDURE trates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "	LOCAL tinc\n"
+  "	TABLE rinf, rexp\n"
+  "	DEPEND dt, celsius FROM -200 TO 150 WITH 350\n"
+  "\n"
+  "    rates(v)    : not consistently executed from here if usetable_hh == 1\n"
+  "        : so don't expect the tau values to be tracking along with\n"
+  "        : the inf values in hoc\n"
+  "\n"
+  "	tinc = -dt * q10\n"
+  "	rexp = 1 - exp(tinc/rtau)\n"
+  "}\n"
+  "\n"
+  "FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.\n"
+  "        if (fabs(x/y) < 1e-6) {\n"
+  "                vtrap = y*(1 - x/y/2)\n"
+  "        }else{\n"
+  "                vtrap = x/(exp(x/y) - 1)\n"
+  "        }\n"
+  "}\n"
+  "\n"
+  "UNITSON\n"
+  ;
+#endif

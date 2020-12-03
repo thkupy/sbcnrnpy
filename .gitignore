@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+#old subdirs
+bkup_smallexc2/
+cells/
+figs/
+results/
+mechanisms/x86_64/
+smallexc_venv/
+
+*.out
+*.tar
+*.zip
+*.png
+*.tif
+*.jpg

@@ -1,4 +1,4 @@
-/* Created by Language version: 7.5.0 */
+/* Created by Language version: 7.7.0 */
 /* VECTORIZED */
 #define NRN_VECTORIZED 1
 #include <stdio.h>
@@ -90,6 +90,15 @@ extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
 extern void nrn_promote(Prop*, int, int);
 extern Memb_func* memb_func;
+ 
+#define NMODL_TEXT 1
+#if NMODL_TEXT
+static const char* nmodl_file_text;
+static const char* nmodl_filename;
+extern void hoc_reg_nmodl_text(int, const char*);
+extern void hoc_reg_nmodl_filename(int, const char*);
+#endif
+
  extern void _nrn_setdata_reg(int, void(*)(Prop*));
  static void _setdata(Prop* _prop) {
  _extcall_prop = _prop;
@@ -184,7 +193,7 @@ static void _ode_matsol(_NrnThread*, _Memb_list*, int);
  static void _ode_matsol_instance1(_threadargsproto_);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
- "7.5.0",
+ "7.7.0",
 "na_fast",
  "gnabar_na_fast",
  0,
@@ -246,6 +255,10 @@ extern void _cvode_abstol( Symbol**, double*, int);
      _nrn_thread_reg(_mechtype, 0, _thread_cleanup);
      _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
+ #if NMODL_TEXT
+  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);
+  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);
+#endif
   hoc_register_prop_size(_mechtype, 9, 4);
   hoc_register_dparam_semantics(_mechtype, 0, "na_ion");
   hoc_register_dparam_semantics(_mechtype, 1, "na_ion");
@@ -708,4 +721,106 @@ _first = 0;
 
 #if defined(__cplusplus)
 } /* extern "C" */
+#endif
+
+#if NMODL_TEXT
+static const char* nmodl_filename = "/home/kuenzel/Dokumente/Python/smallexc/mechanisms/na_fast.mod";
+static const char* nmodl_file_text = 
+  "NEURON {\n"
+  "    SUFFIX na_fast\n"
+  "    USEION na READ ena WRITE ina\n"
+  "    RANGE gnabar, ina\n"
+  "    GLOBAL minf, hinf, mtau, htau\n"
+  "    THREADSAFE\n"
+  "}\n"
+  "\n"
+  "UNITS {\n"
+  "    (mA) = (milliamp)\n"
+  "    (mV) = (millivolt)\n"
+  "}\n"
+  "\n"
+  "PARAMETER {\n"
+  "    gnabar=.120 (mho/cm2) <0,1e9>\n"
+  "}\n"
+  "\n"
+  "STATE {\n"
+  "    m h\n"
+  "}\n"
+  "\n"
+  "ASSIGNED {\n"
+  "    v (mV)\n"
+  "    celsius (degC) : 6.3\n"
+  "    ena (mV)\n"
+  "    ina (mA/cm2)\n"
+  "    minf hinf\n"
+  "    mtau (ms)\n"
+  "    htau (ms)\n"
+  "}\n"
+  "\n"
+  "INITIAL {\n"
+  "    rates(v)\n"
+  "    m = minf\n"
+  "    h = hinf\n"
+  "}\n"
+  "\n"
+  "BREAKPOINT {\n"
+  "    SOLVE states METHOD cnexp\n"
+  "    ina = gnabar*m*m*m*h*(v - ena)\n"
+  "}\n"
+  "\n"
+  "DERIVATIVE states {\n"
+  "    rates(v)\n"
+  "    m' = (minf - m)/mtau\n"
+  "    h' = (hinf - h)/htau\n"
+  "}\n"
+  "\n"
+  "FUNCTION malpha(v(mV)) (/ms) {\n"
+  "    LOCAL Tf\n"
+  "    Tf = 3^((celsius - 22(degC))/10(degC))\n"
+  "\n"
+  "    malpha = 0.36 * Tf * expM1( -(v+49), 3 )\n"
+  "    :malpha = 0.36 * Tf * (v + 49) / (1 - exp(-(v+49)/3))\n"
+  "}\n"
+  "\n"
+  "FUNCTION mbeta(v(mV)) (/ms) {\n"
+  "    LOCAL Tf\n"
+  "    Tf = 3^((celsius - 22(degC))/10(degC))\n"
+  "\n"
+  "    mbeta = 0.4 * Tf * expM1( (v+58), 20 )\n"
+  "    :mbeta = -0.4 * Tf * (v + 58) / (1 - exp((v+58)/20))\n"
+  "}\n"
+  "\n"
+  "FUNCTION halpha(v(mV)) (/ms) {\n"
+  "    LOCAL Tf, Tf10\n"
+  "    Tf = 3^((celsius - 22(degC))/10(degC))\n"
+  "    Tf10 = 10^((celsius - 22(degC))/10(degC))\n"
+  "\n"
+  "    halpha = 2.4 * Tf / (1 + exp((v+68.)/3.))  +  0.8 * Tf10 / (1 + exp(v+61.3))\n"
+  "}\n"
+  "\n"
+  "FUNCTION hbeta(v(mV)) (/ms) {\n"
+  "    LOCAL Tf\n"
+  "    Tf = 3^((celsius - 22(degC))/10(degC))\n"
+  "\n"
+  "    hbeta = 3.6 * Tf / (1 + exp(-(v+21)/10))\n"
+  "}\n"
+  "\n"
+  "FUNCTION expM1(x,y) {\n"
+  "    if (fabs(x/y) < 1e-6) {\n"
+  "	expM1 = y*(1 - x/y/2)\n"
+  "    } else {\n"
+  "	expM1 = x/(exp(x/y) - 1)\n"
+  "    }\n"
+  "}\n"
+  "\n"
+  "PROCEDURE rates(v(mV)) {\n"
+  "    TABLE minf, hinf, mtau, htau DEPEND celsius FROM -100 TO 100 WITH 200\n"
+  "\n"
+  "    mtau = 1/(malpha(v) + mbeta(v))\n"
+  "    minf = malpha(v)/(malpha(v) + mbeta(v))\n"
+  "\n"
+  "    htau = 1/(halpha(v) + hbeta(v))\n"
+  "    hinf = halpha(v)/(halpha(v) + hbeta(v))\n"
+  "}\n"
+  ;
 #endif

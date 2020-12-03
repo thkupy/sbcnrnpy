@@ -1,4 +1,4 @@
-/* Created by Language version: 7.5.0 */
+/* Created by Language version: 7.7.0 */
 /* NOT VECTORIZED */
 #define NRN_VECTORIZED 0
 #include <stdio.h>
@@ -87,6 +87,15 @@ extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
 extern void nrn_promote(Prop*, int, int);
 extern Memb_func* memb_func;
+ 
+#define NMODL_TEXT 1
+#if NMODL_TEXT
+static const char* nmodl_file_text;
+static const char* nmodl_filename;
+extern void hoc_reg_nmodl_text(int, const char*);
+extern void hoc_reg_nmodl_filename(int, const char*);
+#endif
+
  extern void _nrn_setdata_reg(int, void(*)(Prop*));
  static void _setdata(Prop* _prop) {
  _p = _prop->param; _ppvar = _prop->dparam;
@@ -159,7 +168,7 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
 static int _ode_count(int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
- "7.5.0",
+ "7.7.0",
 "na",
  "gnabar_na",
  0,
@@ -209,6 +218,10 @@ extern void _cvode_abstol( Symbol**, double*, int);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
      _nrn_setdata_reg(_mechtype, _setdata);
      _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);
+ #if NMODL_TEXT
+  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);
+  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);
+#endif
   hoc_register_prop_size(_mechtype, 9, 3);
   hoc_register_dparam_semantics(_mechtype, 0, "na_ion");
   hoc_register_dparam_semantics(_mechtype, 1, "na_ion");
@@ -517,3 +530,129 @@ static void _initlists() {
    _t__zhexp = makevector(301*sizeof(double));
 _first = 0;
 }
+
+#if NMODL_TEXT
+static const char* nmodl_filename = "/home/kuenzel/Dokumente/Python/smallexc/mechanisms/na.mod";
+static const char* nmodl_file_text = 
+  "TITLE klt.mod  The low threshold conductance of cochlear nucleus neurons\n"
+  "\n"
+  "COMMENT\n"
+  "\n"
+  "NEURON implementation of Jason Rothman's measurements of VCN conductances.\n"
+  "\n"
+  "This file implements the average brain sodium current used in the Rothman model.\n"
+  "In the absence of direct measurements in the VCN, this is a fair assumption.\n"
+  "The model differs from the one used in Rothman et al, (1993) in that the steep\n"
+  "voltage dependence of recovery from inactivation in that model is missing. This\n"
+  "may affect the refractory period. To use the other model, use najsr.mod instead.\n"
+  "\n"
+  "Original implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.\n"
+  "\n"
+  "File split implementaiton, April 1, 2004.\n"
+  "\n"
+  "Contact: pmanis@med.unc.edu\n"
+  "\n"
+  "ENDCOMMENT\n"
+  "\n"
+  "UNITS {\n"
+  "        (mA) = (milliamp)\n"
+  "        (mV) = (millivolt)\n"
+  "        (nA) = (nanoamp)\n"
+  "}\n"
+  "\n"
+  "NEURON {\n"
+  "        SUFFIX na\n"
+  "        USEION na READ ena WRITE ina\n"
+  "        RANGE gnabar, gna, ina\n"
+  "        GLOBAL hinf, minf, htau, mtau\n"
+  "}\n"
+  "\n"
+  "INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}\n"
+  "\n"
+  "PARAMETER {\n"
+  "        v (mV)\n"
+  "        celsius = 22 (degC)  : model is defined on measurements made at room temp in Baltimore\n"
+  "        dt (ms)\n"
+  "        ena (mV)\n"
+  "        gnabar =  0.07958 (mho/cm2) <0,1e9>\n"
+  "}\n"
+  "\n"
+  "STATE {\n"
+  "        m h\n"
+  "}\n"
+  "\n"
+  "ASSIGNED {\n"
+  "    ina (mA/cm2) \n"
+  "    gna (mho/cm2)\n"
+  "    minf hinf\n"
+  "    mtau (ms) htau (ms)\n"
+  "    }\n"
+  "\n"
+  "LOCAL mexp, hexp\n"
+  "\n"
+  "BREAKPOINT {\n"
+  "	SOLVE states\n"
+  "    \n"
+  "    gna = gnabar*(m^3)*h\n"
+  "    ina = gna*(v - ena)\n"
+  "\n"
+  "}\n"
+  "\n"
+  "UNITSOFF\n"
+  "\n"
+  "INITIAL {\n"
+  "    trates(v)\n"
+  "    m = minf\n"
+  "    h = hinf\n"
+  "}\n"
+  "\n"
+  "PROCEDURE states() {  :Computes state variables m, h, and n\n"
+  "	trates(v)      :             at the current v and dt.\n"
+  "	m = m + mexp*(minf-m)\n"
+  "	h = h + hexp*(hinf-h)\n"
+  "VERBATIM\n"
+  "	return 0;\n"
+  "ENDVERBATIM\n"
+  "}\n"
+  "\n"
+  "LOCAL q10\n"
+  "\n"
+  "PROCEDURE rates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "\n"
+  "	q10 = 3^((celsius - 22)/10) : if you don't like room temp, it can be changed!\n"
+  "\n"
+  ": average sodium channel\n"
+  "    minf = 1 / (1+exp(-(v + 38) / 7))\n"
+  "    hinf = 1 / (1+exp((v + 65) / 6))\n"
+  "\n"
+  "    mtau =  (10 / (5*exp((v+60) / 18) + 36*exp(-(v+60) / 25))) + 0.04\n"
+  "    htau =  (100 / (7*exp((v+60) / 11) + 10*exp(-(v+60) / 25))) + 0.6\n"
+  "}\n"
+  "\n"
+  "PROCEDURE trates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "	LOCAL tinc\n"
+  "	TABLE minf, mexp, hinf, hexp\n"
+  "	DEPEND dt, celsius FROM -150 TO 150 WITH 300\n"
+  "\n"
+  "    rates(v)    : not consistently executed from here if usetable_hh == 1\n"
+  "        : so don't expect the tau values to be tracking along with\n"
+  "        : the inf values in hoc\n"
+  "\n"
+  "	tinc = -dt * q10\n"
+  "	mexp = 1 - exp(tinc/mtau)\n"
+  "	hexp = 1 - exp(tinc/htau)\n"
+  "	}\n"
+  "\n"
+  "FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.\n"
+  "        if (fabs(x/y) < 1e-6) {\n"
+  "                vtrap = y*(1 - x/y/2)\n"
+  "        }else{\n"
+  "                vtrap = x/(exp(x/y) - 1)\n"
+  "        }\n"
+  "}\n"
+  "\n"
+  "UNITSON\n"
+  ;
+#endif

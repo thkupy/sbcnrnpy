@@ -1,4 +1,4 @@
-/* Created by Language version: 7.5.0 */
+/* Created by Language version: 7.7.0 */
 /* NOT VECTORIZED */
 #define NRN_VECTORIZED 0
 #include <stdio.h>
@@ -87,6 +87,15 @@ extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
 extern void nrn_promote(Prop*, int, int);
 extern Memb_func* memb_func;
+ 
+#define NMODL_TEXT 1
+#if NMODL_TEXT
+static const char* nmodl_file_text;
+static const char* nmodl_filename;
+extern void hoc_reg_nmodl_text(int, const char*);
+extern void hoc_reg_nmodl_filename(int, const char*);
+#endif
+
  extern void _nrn_setdata_reg(int, void(*)(Prop*));
  static void _setdata(Prop* _prop) {
  _p = _prop->param; _ppvar = _prop->dparam;
@@ -163,7 +172,7 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
 static int _ode_count(int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
- "7.5.0",
+ "7.7.0",
 "klt",
  "gkltbar_klt",
  0,
@@ -213,6 +222,10 @@ extern void _cvode_abstol( Symbol**, double*, int);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
      _nrn_setdata_reg(_mechtype, _setdata);
      _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);
+ #if NMODL_TEXT
+  hoc_reg_nmodl_text(_mechtype, nmodl_file_text);
+  hoc_reg_nmodl_filename(_mechtype, nmodl_filename);
+#endif
   hoc_register_prop_size(_mechtype, 9, 3);
   hoc_register_dparam_semantics(_mechtype, 0, "k_ion");
   hoc_register_dparam_semantics(_mechtype, 1, "k_ion");
@@ -521,3 +534,142 @@ static void _initlists() {
    _t__zzexp = makevector(301*sizeof(double));
 _first = 0;
 }
+
+#if NMODL_TEXT
+static const char* nmodl_filename = "/home/kuenzel/Dokumente/Python/smallexc/mechanisms/klt.mod";
+static const char* nmodl_file_text = 
+  "TITLE klt.mod  The low threshold conductance of cochlear nucleus neurons\n"
+  "\n"
+  "COMMENT\n"
+  "\n"
+  "NEURON implementation of Jason Rothman's measurements of VCN conductances.\n"
+  "\n"
+  "This file implements the low threshold potassium current found in several brainstem\n"
+  " nuclei of the auditory system, including the spherical and globular bushy cells\n"
+  "  (Manis and Marx, 1991; Rothman and Manis, 2003a,b) and octopus cells (Bal and\n"
+  "  Oertel, 2000) of the ventral cochlear nucleus, principal cells of the medial \n"
+  "  nucleus of the trapzoid body (Brew and Forsythe, 1995, Wang and Kaczmarek, \n"
+  "  1997) and neurons of the medial superior olive. The current is likely mediated by \n"
+  "  heteromultimers of Kv1.1 and Kv1.2 potassium channel subunits. The specific \n"
+  "  implementation is described in Rothman and Manis, J. Neurophysiol. 2003, in the \n"
+  "  appendix. Measurements were made from isolated neurons from adult guinea pig, \n"
+  "  under reasonably stringent voltage clamp conditions. The measured current is \n"
+  "  sensitive to the mamba snake toxin dendrotoxin-I.\n"
+  "\n"
+  "\n"
+  "Similar conductrances are found in the homologous neurons of the avian auditory \n"
+  "system (Reyes and Rubel; Zhang and Trussell; Rathouz and Trussell), and the \n"
+  "conductance described here, in the absence of more detailed kinetic measurements\n"
+  ", is probably suitable for use in modeling that system.\n"
+  "\n"
+  "\n"
+  "Original implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.\n"
+  "\n"
+  "File split implementation, February 28, 2004.\n"
+  "\n"
+  "Contact: pmanis@med.unc.edu\n"
+  "\n"
+  "ENDCOMMENT\n"
+  "\n"
+  "UNITS {\n"
+  "        (mA) = (milliamp)\n"
+  "        (mV) = (millivolt)\n"
+  "        (nA) = (nanoamp)\n"
+  "}\n"
+  "\n"
+  "NEURON {\n"
+  "        SUFFIX klt\n"
+  "        USEION k READ ek WRITE ik\n"
+  "        RANGE gkltbar, gklt, ik\n"
+  "        GLOBAL winf, zinf, wtau, ztau\n"
+  "}\n"
+  "\n"
+  "INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}\n"
+  "\n"
+  "PARAMETER {\n"
+  "        v (mV)\n"
+  "        celsius = 22 (degC)  : model is defined on measurements made at room temp in Baltimore\n"
+  "        dt (ms)\n"
+  "        ek = -77 (mV)\n"
+  "        gkltbar = 0.01592 (mho/cm2) <0,1e9>\n"
+  "        zss = 0.5   <0,1>   : steady state inactivation of glt\n"
+  "}\n"
+  "\n"
+  "STATE {\n"
+  "        w z\n"
+  "}\n"
+  "\n"
+  "ASSIGNED {\n"
+  "    ik (mA/cm2) \n"
+  "    gklt (mho/cm2)\n"
+  "    winf zinf\n"
+  "    wtau (ms) ztau (ms)\n"
+  "    }\n"
+  "\n"
+  "LOCAL wexp, zexp\n"
+  "\n"
+  "BREAKPOINT {\n"
+  "	SOLVE states\n"
+  "    \n"
+  "	gklt = gkltbar*(w^4)*z\n"
+  "    ik = gklt*(v - ek)\n"
+  "\n"
+  "}\n"
+  "\n"
+  "UNITSOFF\n"
+  "\n"
+  "INITIAL {\n"
+  "    trates(v)\n"
+  "    w = winf\n"
+  "    z = zinf\n"
+  "}\n"
+  "\n"
+  "PROCEDURE states() {  :Computes state variables m, h, and n\n"
+  "	trates(v)      :             at the current v and dt.\n"
+  "	w = w + wexp*(winf-w)\n"
+  "	z = z + zexp*(zinf-z)\n"
+  "VERBATIM\n"
+  "	return 0;\n"
+  "ENDVERBATIM\n"
+  "}\n"
+  "\n"
+  "LOCAL q10\n"
+  "\n"
+  "PROCEDURE rates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "\n"
+  "	q10 = 3^((celsius - 22)/10) : if you don't like room temp, it can be changed!\n"
+  "\n"
+  "    winf = (1 / (1 + exp(-(v + 48) / 6)))^0.25\n"
+  "    zinf = zss + ((1-zss) / (1 + exp((v + 71) / 10)))\n"
+  "\n"
+  "    wtau =  (100 / (6*exp((v+60) / 6) + 16*exp(-(v+60) / 45))) + 1.5\n"
+  "    ztau =  (1000 / (exp((v+60) / 20) + exp(-(v+60) / 8))) + 50\n"
+  "}\n"
+  "\n"
+  "PROCEDURE trates(v) {  :Computes rate and other constants at current v.\n"
+  "                      :Call once from HOC to initialize inf at resting v.\n"
+  "	LOCAL tinc\n"
+  "	TABLE winf, wexp, zinf, zexp\n"
+  "	DEPEND dt, celsius FROM -150 TO 150 WITH 300\n"
+  "\n"
+  "    rates(v)    : not consistently executed from here if usetable_hh == 1\n"
+  "        : so don't expect the tau values to be tracking along with\n"
+  "        : the inf values in hoc\n"
+  "\n"
+  "	tinc = -dt * q10\n"
+  "	wexp = 1 - exp(tinc/wtau)\n"
+  "	zexp = 1 - exp(tinc/ztau)\n"
+  "	}\n"
+  "\n"
+  "FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.\n"
+  "        if (fabs(x/y) < 1e-6) {\n"
+  "                vtrap = y*(1 - x/y/2)\n"
+  "        }else{\n"
+  "                vtrap = x/(exp(x/y) - 1)\n"
+  "        }\n"
+  "}\n"
+  "\n"
+  "UNITSON\n"
+  ;
+#endif
