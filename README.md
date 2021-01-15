@@ -1,5 +1,6 @@
 This code is mainly here for review. If you want to run the model please follow the instructions below.
 Many simulations, even with multiprocessing, run for a very long time. As a rule of thumb on my machine simulation is about 3-4x slower than real time (i.e. 3-4s for a 1000ms simulation). This was created to run in a 64bit linux environment. I cannot really help with windows or mac but just contact me if you have questions, maybe I can help.
+The platform specificity concerns the loading of the model library libnrnmech / nrnmech.dll. This occurs in semodels.py around line 19. If you are trying to run this on windows or osx you should modify the code here to load the correct library name for your platform.
 
 # Installation Instructions
 
@@ -26,12 +27,15 @@ could be in:
 ```pip3 install -r requirements.txt```
 
 For some reason I have to do this twice, possibly due to dependency issues. I am still investigating.
+For OSX Catalina it was suggested to me to NOT use the pip3 install of NEURON but instead install from the NEURON repository. You'd have to modify the requirements.txt then.
 
 5) change to the smallexc dir
 
 ```cd ~/Documents/Python/KoertKuenzelSBC```
 
-6) Run the test stimulation. The actual code is in the subdirectory "smallexc". 
+6) Compile mechanisms by invoking nrnivmodl.
+
+7) Run the test stimulation. The actual code is in the subdirectory "smallexc". 
 Simulations "expect" to be run from the root level of the repository:
 
 ```python smallexc/smallexc_test.py```
