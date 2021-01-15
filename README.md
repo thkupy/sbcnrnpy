@@ -26,7 +26,7 @@ could be in:
 
 ```pip3 install -r requirements.txt```
 
-For some reason I have to do this twice, possibly due to dependency issues. I am still investigating.
+I suggest you run this twice, for some reason both I and one of the paper reviewers had dependency issues. I am still investigating. But running pip3 install -r requirements.txt solved it for me.
 For OSX Catalina it was suggested to me to NOT use the pip3 install of NEURON but instead install from the NEURON repository. You'd have to modify the requirements.txt then.
 
 5) change to the smallexc dir
