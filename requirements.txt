@@ -1,5 +1,5 @@
 Cython==0.29.21
-numpy==1.16.1
+numpy==1.22.0
 dataclasses==0.6
 2to3==1.0
 appdirs==1.4.4
